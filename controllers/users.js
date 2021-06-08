@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 
 module.exports.getUsers = (req, res) => {
@@ -37,6 +38,18 @@ module.exports.createUser = (req, res) => {
       }));
 };
 
+module.exports.getMe = (req, res) => {
+  const id = req.user._id;
+  User.findById(id)
+    .orFail(() => new Error('NotFound'))
+    .then((user) => res.status(200).send(user))
+    .catch((err) => {
+      if (err.name === 'ValidatorError' || err.name === 'CastError') return res.status(400).send({ message: 'Переданы некорректные данные' });
+      if (err.message === 'NotFound') return res.status(404).send({ message: 'Объект не найден' });
+      return res.status(500).send({ message: 'Произошла ошибка' });
+    });
+};
+
 module.exports.changeUser = (req, res) => {
   const id = req.user._id;
   const { name, about } = req.body;
@@ -65,12 +78,10 @@ module.exports.changeAvatar = (req, res) => {
 
 module.exports.login = (req, res) => {
   const { email, password } = req.body;
-  User.findOne(email)
-    .orFail(() => new Error('Неправильные почта или пароль'))
-    .then((user) => bcrypt.compare(password, user.password))
-    .then((matched) => {
-      if (!matched) return Promise.reject(new Error('Неправильные почта или пароль'));
-      return res.status(200).send({ message: 'Всё верно!' });
+  User.findUserByEmail(email, password)
+    .then((user) => {
+      const token = jwt.sign({ _id: user._id }, 'secret-key', { expiresIn: '7d' });
+      res.status(200).send({ token });
     })
     .catch((err) => {
       if (err.name === 'ValidatorError' || err.name === 'CastError') return res.status(400).send({ message: 'Переданы некорректные данные' });
