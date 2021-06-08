@@ -1,3 +1,4 @@
+const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 
 module.exports.getUsers = (req, res) => {
@@ -22,13 +23,18 @@ module.exports.getUser = (req, res) => {
 };
 
 module.exports.createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
-  User.create({ name, about, avatar })
-    .then((user) => res.status(200).send(user))
-    .catch((err) => {
-      if (err.name === 'ValidatorError') return res.status(400).send({ message: 'Переданы некорректные данные' });
-      return res.status(500).send({ message: 'Произошла ошибка' });
-    });
+  const {
+    name, about, avatar, email, password,
+  } = req.body;
+  bcrypt.hash(password, 10)
+    .then((hash) => User.create({
+      name, about, avatar, email, password: hash,
+    })
+      .then((user) => res.status(200).send(user))
+      .catch((err) => {
+        if (err.name === 'ValidatorError') return res.status(400).send({ message: 'Переданы некорректные данные' });
+        return res.status(500).send({ message: 'Произошла ошибка' });
+      }));
 };
 
 module.exports.changeUser = (req, res) => {
@@ -53,6 +59,22 @@ module.exports.changeAvatar = (req, res) => {
     .catch((err) => {
       if (err.name === 'ValidatorError' || err.name === 'CastError') return res.status(400).send({ message: 'Переданы некорректные данные' });
       if (err.message === 'NotFound') return res.status(404).send({ message: 'Объект не найден' });
+      return res.status(500).send({ message: 'Произошла ошибка' });
+    });
+};
+
+module.exports.login = (req, res) => {
+  const { email, password } = req.body;
+  User.findOne(email)
+    .orFail(() => new Error('Неправильные почта или пароль'))
+    .then((user) => bcrypt.compare(password, user.password))
+    .then((matched) => {
+      if (!matched) return Promise.reject(new Error('Неправильные почта или пароль'));
+      return res.status(200).send({ message: 'Всё верно!' });
+    })
+    .catch((err) => {
+      if (err.name === 'ValidatorError' || err.name === 'CastError') return res.status(400).send({ message: 'Переданы некорректные данные' });
+      if (err.message === 'Неправильные почта или пароль') return res.status(401).send({ message: err.message });
       return res.status(500).send({ message: 'Произошла ошибка' });
     });
 };
