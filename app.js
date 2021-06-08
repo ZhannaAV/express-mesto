@@ -24,10 +24,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.post('/signup', createUser);
 app.post('/signin', login);
 
-app.use(auth);
-
-app.use('/', cardsRouter);
-app.use('/', usersRouter);
+app.use('/', auth, cardsRouter);
+app.use('/', auth, usersRouter);
 
 app.listen(PORT, () => {
   console.log(`App listening on port ${PORT}`);

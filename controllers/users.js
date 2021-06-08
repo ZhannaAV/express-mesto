@@ -12,12 +12,13 @@ module.exports.getUsers = (req, res) => {
     });
 };
 
-module.exports.getUser = (req, res) => {
-  User.findById(req.params.userId)
+module.exports.getMe = (req, res) => {
+  const id = req.user._id;
+  User.findById(id)
     .orFail(() => new Error('NotFound'))
     .then((user) => res.status(200).send(user))
     .catch((err) => {
-      if (err.name === 'CastError') return res.status(400).send({ message: 'Переданы некорректные данные' });
+      if (err.name === 'ValidatorError' || err.name === 'CastError') return res.status(400).send({ message: 'Переданы некорректные данные' });
       if (err.message === 'NotFound') return res.status(404).send({ message: 'Объект не найден' });
       return res.status(500).send({ message: 'Произошла ошибка' });
     });
@@ -36,18 +37,6 @@ module.exports.createUser = (req, res) => {
         if (err.name === 'ValidatorError') return res.status(400).send({ message: 'Переданы некорректные данные' });
         return res.status(500).send({ message: 'Произошла ошибка' });
       }));
-};
-
-module.exports.getMe = (req, res) => {
-  const id = req.user._id;
-  User.findById(id)
-    .orFail(() => new Error('NotFound'))
-    .then((user) => res.status(200).send(user))
-    .catch((err) => {
-      if (err.name === 'ValidatorError' || err.name === 'CastError') return res.status(400).send({ message: 'Переданы некорректные данные' });
-      if (err.message === 'NotFound') return res.status(404).send({ message: 'Объект не найден' });
-      return res.status(500).send({ message: 'Произошла ошибка' });
-    });
 };
 
 module.exports.changeUser = (req, res) => {
