@@ -7,10 +7,11 @@ class NotFoundError extends Error {
 
 // eslint-disable-next-line no-unused-vars
 const errorHandler = (err, req, res, next) => {
-  if (err.name === 'ValidatorError') return res.status(400).send({ message: 'Переданы некорректные данные' });
+  if (err.statusCode) return res.status(err.statusCode).send({ message: err.message });
+  if (err.name === 'ValidatorError' || err.name === 'CastError') return res.status(400).send({ message: 'Переданы некорректные данные' });
+  if (err.message === 'Неправильные почта или пароль') return res.status(401).send({ message: err.message });
   if (err.message === 'Нет прав для удаления карточки') return res.status(403).send({ message: err.message });
   if (err.name === 'MongoError' && err.code === 11000) return res.status(409).send({ message: 'Не удаётся зарегистрировать пользователя' });
-  if (err.statusCode) return res.status(err.statusCode).send({ message: err.message });
   return res.status(500).send({ message: 'Произошла ошибка на сервере' });
 };
 

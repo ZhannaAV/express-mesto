@@ -1,30 +1,24 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const { NotFoundError } = require('../middlewares/err');
 
-module.exports.getUsers = (req, res) => {
+module.exports.getUsers = (req, res, next) => {
   User.find({})
-    .orFail(() => new Error('NotFound'))
+    .orFail(() => new NotFoundError('Пользователи не найдены'))
     .then((users) => res.status(200).send(users))
-    .catch((err) => {
-      if (err.message === 'NotFound') return res.status(404).send({ message: 'Объект не найден' });
-      return res.status(500).send({ message: 'Произошла ошибка' });
-    });
+    .catch(next);
 };
 
-module.exports.getMe = (req, res) => {
+module.exports.getMe = (req, res, next) => {
   const id = req.user._id;
   User.findById(id)
-    .orFail(() => new Error('NotFound'))
+    .orFail(() => new NotFoundError('Пользователь не найден'))
     .then((user) => res.status(200).send(user))
-    .catch((err) => {
-      if (err.name === 'ValidatorError' || err.name === 'CastError') return res.status(400).send({ message: 'Переданы некорректные данные' });
-      if (err.message === 'NotFound') return res.status(404).send({ message: 'Объект не найден' });
-      return res.status(500).send({ message: 'Произошла ошибка' });
-    });
+    .catch(next);
 };
 
-module.exports.createUser = (req, res) => {
+module.exports.createUser = (req, res, next) => {
   const {
     name, about, avatar, email, password,
   } = req.body;
@@ -33,48 +27,33 @@ module.exports.createUser = (req, res) => {
       name, about, avatar, email, password: hash,
     })
       .then((user) => res.status(200).send(user))
-      .catch((err) => {
-        if (err.name === 'ValidatorError') return res.status(400).send({ message: 'Переданы некорректные данные' });
-        return res.status(500).send({ message: 'Произошла ошибка' });
-      }));
+      .catch(next));
 };
 
-module.exports.changeUser = (req, res) => {
+module.exports.changeUser = (req, res, next) => {
   const id = req.user._id;
   const { name, about } = req.body;
   User.findByIdAndUpdate(id, { name, about }, { new: true, runValidators: true })
-    .orFail(() => new Error('NotFound'))
+    .orFail(() => new NotFoundError('Пользователь не найден'))
     .then((user) => res.status(200).send(user))
-    .catch((err) => {
-      if (err.name === 'ValidatorError' || err.name === 'CastError') return res.status(400).send({ message: 'Переданы некорректные данные' });
-      if (err.message === 'NotFound') return res.status(404).send({ message: 'Объект не найден' });
-      return res.status(500).send({ message: 'Произошла ошибка' });
-    });
+    .catch(next);
 };
 
-module.exports.changeAvatar = (req, res) => {
+module.exports.changeAvatar = (req, res, next) => {
   const id = req.user._id;
   const { avatar } = req.body;
   User.findByIdAndUpdate(id, { avatar }, { new: true, runValidators: true })
-    .orFail(() => new Error('NotFound'))
+    .orFail(() => new NotFoundError('Пользователь не найден'))
     .then((user) => res.status(200).send(user))
-    .catch((err) => {
-      if (err.name === 'ValidatorError' || err.name === 'CastError') return res.status(400).send({ message: 'Переданы некорректные данные' });
-      if (err.message === 'NotFound') return res.status(404).send({ message: 'Объект не найден' });
-      return res.status(500).send({ message: 'Произошла ошибка' });
-    });
+    .catch(next);
 };
 
-module.exports.login = (req, res) => {
+module.exports.login = (req, res, next) => {
   const { email, password } = req.body;
   User.findUserByEmail(email, password)
     .then((user) => {
       const token = jwt.sign({ _id: user._id }, 'secret-key', { expiresIn: '7d' });
       res.status(200).send({ token });
     })
-    .catch((err) => {
-      if (err.name === 'ValidatorError' || err.name === 'CastError') return res.status(400).send({ message: 'Переданы некорректные данные' });
-      if (err.message === 'Неправильные почта или пароль') return res.status(401).send({ message: err.message });
-      return res.status(500).send({ message: 'Произошла ошибка' });
-    });
+    .catch(next);
 };
