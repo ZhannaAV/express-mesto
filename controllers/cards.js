@@ -1,69 +1,49 @@
 const Card = require('../models/card');
+const { NotFoundError } = require('../middlewares/err');
 
-module.exports.getCards = (req, res) => {
+module.exports.getCards = (req, res, next) => {
   Card.find({})
-    .orFail(() => new Error('NotFound'))
-  // .populate(['owner', 'likes']) что-то не так с подключением этого метода
+    .orFail(() => new NotFoundError('Карточки не найдены'))
     .then((cards) => res.status(200).send(cards))
-    .catch((err) => {
-      if (err.message === 'NotFound') return res.status(404).send({ message: 'Объект не найден' });
-      return res.status(500).send({ message: 'Произошла ошибка' });
-    });
+    .catch(next);
 };
 
-module.exports.createCard = (req, res) => {
+module.exports.createCard = (req, res, next) => {
   const { name, link } = req.body;
   const userId = req.user._id;
   Card.create({ name, link, owner: userId })
-  // .populate(['owner', 'likes'])
     .then((card) => res.status(200).send(card))
-    .catch((err) => {
-      if (err.name === 'ValidatorError') return res.status(400).send({ message: 'Переданы некорректные данные' });
-      return res.status(500).send({ message: 'Произошла ошибка' });
-    });
+    .catch(next);
 };
 
-module.exports.deleteCard = (req, res) => {
+module.exports.deleteCard = (req, res, next) => {
   const { cardId } = req.params;
   const userId = req.user._id;
   Card.findById(cardId)
-    .orFail(() => new Error('NotFound'))
+    .orFail(() => new NotFoundError('Карточка не найдена'))
     .then((card) => {
-      if (card.owner === userId) return card._id;
-      return Promise.reject(new Error('Нет прав для удаления поста'));
+      if (card.owner !== userId) {
+        throw new Error('Нет прав для удаления карточки');
+      }
+      return card._id;
     })
     .then((id) => Card.findByIdAndRemove(id)
-      .then(() => res.status(200).send({ message: 'Пост удален' })))
-    .catch((err) => {
-      if (err.name === 'CastError') return res.status(400).send({ message: 'Переданы некорректные данные' });
-      if (err.message === 'Нет прав для удаления поста') return res.status(403).send({ message: err.message });
-      if (err.message === 'NotFound') return res.status(404).send({ message: 'Объект не найден' });
-      return res.status(500).send({ message: 'Произошла ошибка' });
-    });
+      .then(() => res.status(200).send({ message: 'Карточка удалена' })))
+    .catch(next);
 };
 
-module.exports.likeCard = (req, res) => {
+module.exports.likeCard = (req, res, next) => {
   const userId = req.user._id;
   Card.findByIdAndUpdate(req.params.cardId, { $addToSet: { likes: userId } }, { new: true })
-    .orFail(() => new Error('NotFound'))
-  // .populate(['owner', 'likes'])
+    .orFail(() => new NotFoundError('Карточка не найдена'))
     .then((card) => res.status(200).send(card))
-    .catch((err) => {
-      if (err.name === 'CastError') return res.status(400).send({ message: 'Переданы некорректные данные' });
-      if (err.message === 'NotFound') return res.status(404).send({ message: 'Объект не найден' });
-      return res.status(500).send({ message: 'Произошла ошибка' });
-    });
+    .catch(next);
 };
 
-module.exports.dislikeCard = (req, res) => {
+module.exports.dislikeCard = (req, res, next) => {
   const userId = req.user._id;
-  Card.findByIdAndUpdate(req.params.cardId, { $pull: { likes: userId } })
-    .orFail(() => new Error('NotFound'))
-  // .populate(['owner', 'likes'])
+  Card.findByIdAndUpdate(req.params.cardId, { $pull: { likes: userId } }, { new: true })
+    .orFail(() => new NotFoundError('Карточка не найдена'))
     .then((card) => res.status(200).send(card))
-    .catch((err) => {
-      if (err.name === 'CastError') return res.status(400).send({ message: 'Переданы некорректные данные' });
-      if (err.message === 'NotFound') return res.status(404).send({ message: 'Объект не найден' });
-      return res.status(500).send({ message: 'Произошла ошибка' });
-    });
+    .catch(next);
 };

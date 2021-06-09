@@ -6,6 +6,7 @@ const usersRouter = require('./routes/users');
 const cardsRouter = require('./routes/cards');
 const { createUser, login } = require('./controllers/users');
 const auth = require('./middlewares/auth');
+const { errorHandler } = require('./middlewares/err');
 
 mongoose.connect('mongodb://localhost:27017/mestodb', {
   useNewUrlParser: true,
@@ -26,6 +27,8 @@ app.post('/signin', login);
 
 app.use('/', auth, cardsRouter);
 app.use('/', auth, usersRouter);
+
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`App listening on port ${PORT}`);
