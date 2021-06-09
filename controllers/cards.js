@@ -1,5 +1,6 @@
 const Card = require('../models/card');
-const { NotFoundError } = require('../middlewares/err');
+const NotFoundError = require('../errors/NotFoundError');
+const NoRulesError = require('../errors/NoRulesError');
 
 module.exports.getCards = (req, res, next) => {
   Card.find({})
@@ -23,7 +24,7 @@ module.exports.deleteCard = (req, res, next) => {
     .orFail(() => new NotFoundError('Карточка не найдена'))
     .then((card) => {
       if (card.owner !== userId) {
-        throw new Error('Нет прав для удаления карточки');
+        throw new NoRulesError('Нет прав для удаления карточки');
       }
       return card._id;
     })

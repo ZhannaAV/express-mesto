@@ -1,18 +1,9 @@
-class NotFoundError extends Error {
-  constructor(message) {
-    super(message);
-    this.statusCode = 404;
-  }
-}
-
 // eslint-disable-next-line no-unused-vars
 const errorHandler = (err, req, res, next) => {
-  if (err.statusCode) return res.status(err.statusCode).send({ message: err.message });
   if (err.name === 'ValidatorError' || err.name === 'CastError') return res.status(400).send({ message: 'Переданы некорректные данные' });
-  if (err.message === 'Неправильные почта или пароль') return res.status(401).send({ message: err.message });
-  if (err.message === 'Нет прав для удаления карточки') return res.status(403).send({ message: err.message });
   if (err.name === 'MongoError' && err.code === 11000) return res.status(409).send({ message: 'Не удаётся зарегистрировать пользователя' });
-  return res.status(500).send({ message: 'Произошла ошибка на сервере' });
+  const { statusCode = 500, message = 'Произошла ошибка на сервере' } = err;
+  return res.status(statusCode).send({ message });
 };
 
-module.exports = { NotFoundError, errorHandler };
+module.exports = errorHandler;
