@@ -6,12 +6,24 @@ const LoginError = require('../errors/LoginError');
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
+    validate: {
+      validator(v) {
+        return /^[a-яё -]+$/.test(v);
+      },
+      message: 'Укажите корректное название',
+    },
     minlength: 2,
     maxlength: 20,
     default: 'Жак-Ив Кусто',
   },
   about: {
     type: String,
+    validate: {
+      validator(v) {
+        return /^[a-яё -]+$/.test(v);
+      },
+      message: 'Укажите корректное название',
+    },
     minlength: 2,
     maxlength: 30,
     default: 'Исследователь',
@@ -31,7 +43,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     validate: {
       validator(v) {
-        return /^[a-z0-9-_]{1,20}@[a-z0-9-_]{1,20}\.[a-z]{2,5}$/.test(v);
+        return /^[a-z0-9-_.]{1,20}@[a-z0-9-_.]{1,20}\.[a-z]{2,5}$/.test(v);
       },
       message: 'Укажите почту в формате name@email.domen',
     },
