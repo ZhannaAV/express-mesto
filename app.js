@@ -8,6 +8,7 @@ const cardsRouter = require('./routes/cards');
 const { createUser, login } = require('./controllers/users');
 const auth = require('./middlewares/auth');
 const errorHandler = require('./middlewares/err');
+const NotFoundError = require('./errors/NotFoundError');
 
 mongoose.connect('mongodb://localhost:27017/mestodb', {
   useNewUrlParser: true,
@@ -25,23 +26,29 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 app.post('/signup', celebrate({
   body: Joi.object().keys({
-    email: Joi.string().required(),
+    email: Joi.string().required().pattern(new RegExp('^[a-z0-9-_.]{1,20}@[a-z0-9-_.]{1,20}\\.[a-z]{2,5}$')),
     password: Joi.string().required(),
-    name: Joi.string().min(2).max(20),
+    name: Joi.string().pattern(new RegExp('^[a-яё -]+$')).min(2).max(20),
     about: Joi.string().min(2).max(30),
-    avatar: Joi.string(),
+    // eslint-disable-next-line max-len
+    avatar: Joi.string().pattern(new RegExp(/^(http|https):\/\/[A-za-z0-9-._~:/?#\[\]@!$&'()*+,;=]{1,}$/)),
   }),
 }), createUser);
 
 app.post('/signin', celebrate({
   body: Joi.object().keys({
-    email: Joi.string().required(),
+    email: Joi.string().required().pattern(new RegExp('^[a-z0-9-_.]{1,20}@[a-z0-9-_.]{1,20}\\.[a-z]{2,5}$')),
     password: Joi.string().required(),
   }),
 }), login);
 
-app.use('/', auth, cardsRouter);
-app.use('/', auth, usersRouter);
+app.use('/cards', auth, cardsRouter);
+app.use('/users', auth, usersRouter);
+
+app.get('/:path', (req, res, next) => {
+  if (req.params.path) throw new NotFoundError('Cтраница не найдена');
+  next();
+});
 
 app.use(errors());
 app.use(errorHandler);

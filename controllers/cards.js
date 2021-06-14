@@ -4,7 +4,7 @@ const NoRulesError = require('../errors/NoRulesError');
 
 module.exports.getCards = (req, res, next) => {
   Card.find({})
-    .orFail(() => new NotFoundError('Карточки не найдены'))
+    // .orFail(() => new NotFoundError('Карточки не найдены'))
     .then((cards) => res.status(200).send(cards))
     .catch(next);
 };
@@ -23,7 +23,7 @@ module.exports.deleteCard = (req, res, next) => {
   Card.findById(cardId)
     .orFail(() => new NotFoundError('Карточка не найдена'))
     .then((card) => {
-      if (card.owner !== userId) {
+      if (String(card.owner) !== userId) {
         throw new NoRulesError('Нет прав для удаления карточки');
       }
       return card._id;

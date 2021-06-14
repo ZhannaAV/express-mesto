@@ -5,20 +5,25 @@ const {
   getUsers, changeUser, changeAvatar, getMe,
 } = require('../controllers/users');
 
-router.get('/users/me', getMe);
+router.get('/me', getMe);
 
-router.get('/users', getUsers);
+router.get('/', getUsers);
 
-router.patch('/users/me', celebrate({
+router.patch('/me', celebrate({
   body: Joi.object().keys({
-    name: Joi.string().required().min(2).max(20),
-    about: Joi.string().required().min(2).max(30),
+    name: Joi.string().required().pattern(new RegExp(/^[a-za-яё -]+$/i))
+      .min(2)
+      .max(20),
+    about: Joi.string().required().pattern(new RegExp(/^[a-za-яё -]+$/i))
+      .min(2)
+      .max(30),
   }),
 }), changeUser);
 
-router.patch('/users/me/avatar', celebrate({
+router.patch('/me/avatar', celebrate({
   body: Joi.object().keys({
-    avatar: Joi.string().required(),
+    // eslint-disable-next-line no-invalid-regexp
+    avatar: Joi.string().required().pattern(new RegExp(/^(http|https):\/\/[A-za-z0-9-._~:/?#\[\]@!$&'()*+,;=]{1,}$/)),
   }),
 }), changeAvatar);
 

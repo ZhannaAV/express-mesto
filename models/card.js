@@ -5,6 +5,7 @@ const cardSchema = new mongoose.Schema({
     type: String,
     validate: {
       validator(v) {
+        // проверка регуляркой на уровне схемы - это условие задания
         return /^[a-яё -]+$/.test(v);
       },
       message: 'Укажите корректное название',
@@ -17,7 +18,8 @@ const cardSchema = new mongoose.Schema({
     type: String,
     validate: {
       validator(v) {
-        return /^(http|https):\/\/[a-z0-9-._~:/?#[]@!\$&'\(\)*\+,;=]$/.test(v);
+        // проверка регуляркой на уровне схемы - это условие задания
+        return /^https?:\/\/(www.)?[-a-zA-Z0-9@:%.+~#=]{1,256}.[a-zA-Z0-9()]{1,6}[a-zA-Z0-9-.~:/?#@!$&'()+,;=[]]/gi.test(v);
       },
       message: 'Укажите корректную ссылку',
     },
